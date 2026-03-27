@@ -1,0 +1,4 @@
+package_name = main
+c_sources = stdlib.c, fiter.c
+bhumi_sources = main.bhumi
+bhumi_binary = bhumi
