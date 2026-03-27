@@ -1,7 +1,8 @@
 import C_std;
 
 fn main() <int> {
-    print(findextindir(".", ".rs,.mod,.rlib,.ron,.rmeta,.toml,.ron"));
+    printnl("Running Currently. Searching...");
+    findextindir(".", ".rs,.mod,.rlib,.ron,.rmeta,.toml,.ron");
 }
 
 pub extern fn bh_opendir(string path)              <void*>;
@@ -57,14 +58,12 @@ fn has_ext(string path, string ext_csv) <bool> {
     return found;
 }
 
-pub fn findextindir(string root, string ext_csv) <string> {
+pub fn findextindir(string root, string ext_csv) <void> {
     string[1024] stack;
     int sp = 0;
 
     stack[sp] = bh_strdup(root);
     sp = sp + 1;
-
-    string result = sb_create();
 
     while (sp > 0) {
         sp = sp - 1;
@@ -90,8 +89,7 @@ pub fn findextindir(string root, string ext_csv) <string> {
                 }
             } else if (bh_is_reg(path)) {
                 if (has_ext(path, ext_csv)) {
-                    result = sb_append_str(result, path);
-                    result = sb_append_str(result, "\n");
+                    printnl(path);
                 }
                 free_str(path);
             } else {
@@ -104,6 +102,4 @@ pub fn findextindir(string root, string ext_csv) <string> {
         bh_closedir(dir);
         free_str(current);
     }
-
-    return sb_finish(result);
 }
