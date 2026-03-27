@@ -1,0 +1,109 @@
+import C_std;
+
+fn main() <int> {
+    print(findextindir(".", ".rs,.mod,.rlib,.ron,.rmeta,.toml,.ron"));
+}
+
+pub extern fn bh_opendir(string path)              <void*>;
+pub extern fn bh_closedir(void* d)                 <void>;
+pub extern fn bh_readdir(void* d)                  <string>;
+pub extern fn bh_is_dir(string path)               <bool>;
+pub extern fn bh_is_reg(string path)               <bool>;
+pub extern fn bh_path_join(string dir, string name)<string>;
+pub extern fn bh_strdup(string s)                  <string>;
+
+fn ends_with(string str, string suffix) <bool> {
+    int slen   = slength(str);
+    int suflen = slength(suffix);
+    if (slen < suflen) { return false; }
+    int i = 0;
+    while (i < suflen) {
+        if (!streq(charat(slen - suflen + i, str), charat(i, suffix))) {
+            return false;
+        }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn has_ext(string path, string ext_csv) <bool> {
+    int  csv_len = slength(ext_csv);
+    int  i       = 0;
+    bool found   = false;
+    string cur   = sb_create();
+
+    while (i < csv_len) {
+        if (streq(charat(i, ext_csv), ",")) {
+            string ext = sb_finish(cur);
+            if (ends_with(path, ext)) {
+                free_str(ext);
+                found = true;
+                break;
+            }
+            free_str(ext);
+            cur = sb_create();
+        } else {
+            cur = sb_append_str(cur, charat(i, ext_csv));
+        }
+        i = i + 1;
+    }
+
+    if (!found) {
+        string ext = sb_finish(cur);
+        if (ends_with(path, ext)) { found = true; }
+        free_str(ext);
+    }
+
+    return found;
+}
+
+pub fn findextindir(string root, string ext_csv) <string> {
+    string[1024] stack;
+    int sp = 0;
+
+    stack[sp] = bh_strdup(root);
+    sp = sp + 1;
+
+    string result = sb_create();
+
+    while (sp > 0) {
+        sp = sp - 1;
+        string current = stack[sp];
+
+        void* dir = bh_opendir(current);
+        if (dir == null) {
+            free_str(current);
+            continue;
+        }
+
+        string entry = bh_readdir(dir);
+        while (entry != null) {
+            string path = bh_path_join(current, entry);
+            free_str(entry);
+
+            if (bh_is_dir(path)) {
+                if (sp < 1024) {
+                    stack[sp] = path;
+                    sp = sp + 1;
+                } else {
+                    free_str(path);
+                }
+            } else if (bh_is_reg(path)) {
+                if (has_ext(path, ext_csv)) {
+                    result = sb_append_str(result, path);
+                    result = sb_append_str(result, "\n");
+                }
+                free_str(path);
+            } else {
+                free_str(path);
+            }
+
+            entry = bh_readdir(dir);
+        }
+
+        bh_closedir(dir);
+        free_str(current);
+    }
+
+    return sb_finish(result);
+}
