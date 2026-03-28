@@ -37,11 +37,9 @@ fn has_ext(string path, string ext_csv) <bool> {
         if (streq(charat(i, ext_csv), ",")) {
             string ext = sb_finish(cur);
             if (ends_with(path, ext)) {
-                free_str(ext);
                 found = true;
                 break;
             }
-            free_str(ext);
             cur = sb_create();
         } else {
             cur = sb_append_str(cur, charat(i, ext_csv));
@@ -52,7 +50,6 @@ fn has_ext(string path, string ext_csv) <bool> {
     if (!found) {
         string ext = sb_finish(cur);
         if (ends_with(path, ext)) { found = true; }
-        free_str(ext);
     }
 
     return found;
@@ -71,35 +68,28 @@ pub fn findextindir(string root, string ext_csv) <void> {
 
         void* dir = bh_opendir(current);
         if (dir == null) {
-            free_str(current);
             continue;
         }
 
         string entry = bh_readdir(dir);
         while (entry != null) {
             string path = bh_path_join(current, entry);
-            free_str(entry);
 
             if (bh_is_dir(path)) {
                 if (sp < 1024) {
                     stack[sp] = path;
                     sp = sp + 1;
                 } else {
-                    free_str(path);
                 }
             } else if (bh_is_reg(path)) {
                 if (has_ext(path, ext_csv)) {
                     printnl(path);
                 }
-                free_str(path);
-            } else {
-                free_str(path);
             }
 
             entry = bh_readdir(dir);
         }
 
         bh_closedir(dir);
-        free_str(current);
     }
 }
